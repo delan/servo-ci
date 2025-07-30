@@ -5,6 +5,11 @@ edition = "2024"
 repository = "https://github.com/delan/servo-ci"
 
 [dependencies]
+clap = { version = "4.5.42", features = ["derive"] }
+cmd_lib = "1.9.6"
+jane-eyre = "0.3.0"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 
 # The profile that 'dist' will build with
 [profile.dist]
