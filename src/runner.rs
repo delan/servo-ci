@@ -47,7 +47,8 @@ struct Select {
     #[arg(long)]
     self_hosted_image_name: String,
     #[arg(long)]
-    force_github_hosted_runner: bool,
+    // Allow passing `false`
+    force_github_hosted_runner: Option<bool>,
 }
 
 /// In the unlikely event a self-hosted runner was selected and reserved but it
@@ -101,7 +102,7 @@ impl Select {
             return fall_back_to_github_hosted();
         }
 
-        if *force_github_hosted_runner {
+        if *force_github_hosted_runner == Some(true) {
             info!("--force-github-hosted-runner is set!");
             return fall_back_to_github_hosted();
         }
