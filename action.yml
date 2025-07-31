@@ -1,0 +1,12 @@
+name: Download CI tool
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -xeuo pipefail
+        export GH_TOKEN='${{ github.token }}'
+        url=$(gh api /repos/delan/servo-ci/releases -q '.[0].assets[] | select(.name == "ci-installer.sh") | .browser_download_url')
+        curl -sSLO --fail-with-body --connect-timeout 5 --max-time 30 -- "$url"
+        chmod +x ci-installer.sh
+        ./ci-installer.sh
