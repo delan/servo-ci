@@ -21,8 +21,15 @@ fn main() -> eyre::Result<()> {
 
     let command = Command::parse();
     match command {
-        Command::Hello => run_cmd!(echo hello world >&2)?,
+        Command::Hello => hello()?,
     }
+
+    Ok(())
+}
+
+#[tracing::instrument]
+fn hello() -> eyre::Result<()> {
+    run_cmd!(echo hello world >&2)?;
 
     Ok(())
 }

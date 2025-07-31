@@ -166,8 +166,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 [[package]]
 name = "cmd_lib"
 version = "1.9.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1af0f9b65935ff457da75535a6b6ff117ac858f03f71191188b3b696f90aec5a"
+source = "git+https://github.com/delan/rust_cmd_lib.git?branch=servo%2Fci#c4decd80a494a398d7b779bc5024a2e7c06e4966"
 dependencies = [
  "cmd_lib_macros",
  "env_logger",
@@ -175,13 +174,13 @@ dependencies = [
  "lazy_static",
  "log",
  "os_pipe",
+ "tracing",
 ]
 
 [[package]]
 name = "cmd_lib_macros"
 version = "1.9.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e69eee115667ccda8b9ed7010bcf13356ad45269fc92aa78534890b42809a64"
+source = "git+https://github.com/delan/rust_cmd_lib.git?branch=servo%2Fci#c4decd80a494a398d7b779bc5024a2e7c06e4966"
 dependencies = [
  "proc-macro-error2",
  "proc-macro2",
