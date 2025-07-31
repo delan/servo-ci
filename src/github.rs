@@ -4,6 +4,8 @@ use reqwest::{
     header::{ACCEPT, AUTHORIZATION, HeaderName, HeaderValue, USER_AGENT},
 };
 
+use crate::http::ClientExt;
+
 pub struct GithubApi(Client);
 
 impl GithubApi {
@@ -34,11 +36,11 @@ impl GithubApi {
     }
 
     pub fn post(&self, path: impl AsRef<str>) -> eyre::Result<RequestBuilder> {
-        Ok(self.0.post(Self::compute_url(path)?))
+        self.0.logged_post(Self::compute_url(path)?)
     }
 
     pub fn get(&self, path: impl AsRef<str>) -> eyre::Result<RequestBuilder> {
-        Ok(self.0.get(Self::compute_url(path)?))
+        self.0.logged_get(Self::compute_url(path)?)
     }
 
     fn compute_url(path: impl AsRef<str>) -> eyre::Result<String> {

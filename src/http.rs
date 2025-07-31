@@ -7,6 +7,7 @@ use tracing::info;
 
 pub trait ClientExt {
     fn logged_post(&self, url: impl IntoUrl) -> eyre::Result<RequestBuilder>;
+    fn logged_get(&self, url: impl IntoUrl) -> eyre::Result<RequestBuilder>;
 }
 
 impl ClientExt for Client {
@@ -15,5 +16,12 @@ impl ClientExt for Client {
         info!("POST {url}");
 
         Ok(self.post(url))
+    }
+
+    fn logged_get(&self, url: impl IntoUrl) -> eyre::Result<RequestBuilder> {
+        let url = url.into_url()?;
+        info!("GET {url}");
+
+        Ok(self.get(url))
     }
 }
