@@ -1,24 +1,27 @@
-use std::time::Duration;
+use std::{collections::BTreeMap, thread::sleep, time::Duration};
 
-use jane_eyre::eyre;
+use jane_eyre::eyre::{self, OptionExt};
 use rand::{rng, seq::SliceRandom};
 use reqwest::blocking::Client;
+use serde::Deserialize;
 use serde_json::Value;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
-use crate::{actions::set_output_parameter, http::ClientExt};
+use crate::{actions::set_output_parameter, github::GithubApi, http::ClientExt};
 
 #[derive(clap::Subcommand, Debug)]
 #[allow(private_interfaces)]
 pub enum RunnerCommand {
     Select(Select),
+    Timeout(Timeout),
 }
 
 impl RunnerCommand {
     pub fn run(self) -> eyre::Result<()> {
         match self {
             RunnerCommand::Select(subcommand) => subcommand.run(),
+            RunnerCommand::Timeout(subcommand) => subcommand.run(),
         }
     }
 }
@@ -45,6 +48,30 @@ struct Select {
     self_hosted_image_name: String,
     #[arg(long)]
     force_github_hosted_runner: bool,
+}
+
+/// In the unlikely event a self-hosted runner was selected and reserved but it
+/// goes down before the workload starts, cancel the workflow run.
+#[derive(clap::Args, Debug)]
+struct Timeout {
+    /// (seconds)
+    #[arg(long)]
+    wait_time: u64,
+    /// Unique id that allows the workload job to find the runner
+    /// we are reserving for it (via runner labels), and allows the timeout
+    /// job to find the workload job run (via the job’s friendly name), even
+    /// if there are multiple instances in the workflow call tree.
+    #[arg(long)]
+    unique_id: String,
+    /// `${{ github.repository }}`
+    #[arg(long)]
+    github_repository: String,
+    /// `${{ github.run_id }}`
+    #[arg(long)]
+    github_run_id: String,
+    /// `${{ secrets.GITHUB_TOKEN }}`
+    #[arg(long)]
+    github_token: String,
 }
 
 impl Select {
@@ -115,4 +142,59 @@ impl Select {
 
         fall_back_to_github_hosted()
     }
+}
+
+impl Timeout {
+    fn run(self) -> eyre::Result<()> {
+        let Self {
+            wait_time,
+            unique_id,
+            github_repository,
+            github_run_id,
+            github_token,
+        } = &self;
+        let client = GithubApi::client(github_token)?;
+
+        // Wait a bit
+        sleep(Duration::from_secs(*wait_time));
+
+        // Cancel if workload job is still queued
+        let run_url = format!("/repos/{github_repository}/actions/runs/{github_run_id}");
+        let response = client
+            .get(format!("{run_url}/jobs"))?
+            .send()?
+            .error_for_status()?
+            .json::<RunResponse>()?;
+        let job = response
+            .jobs
+            .iter()
+            .find(|job| job.name.contains(&format!("[{unique_id}]")))
+            .ok_or_eyre("Job not found")?;
+        if job.status == "queued" {
+            error!("Timeout waiting for runner assignment!");
+            error!("Hint: does this repo have permission to access the runner group?");
+            error!("Hint: https://github.com/organizations/servo/settings/actions/runner-groups");
+            info!("");
+            info!("Cancelling workflow run");
+            client
+                .post(format!("{run_url}/cancel"))?
+                .send()?
+                .error_for_status()?;
+        }
+
+        Ok(())
+    }
+}
+
+/// <https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#get-a-workflow-run>
+#[derive(Debug, Deserialize)]
+struct RunResponse {
+    jobs: Vec<Job>,
+}
+#[derive(Debug, Deserialize)]
+struct Job {
+    name: String,
+    status: String,
+    #[serde(flatten)]
+    _rest: BTreeMap<String, Value>,
 }
