@@ -151,6 +151,7 @@ dependencies = [
  "jane-eyre",
  "rand",
  "reqwest",
+ "serde",
  "serde_json",
  "tracing",
  "tracing-subscriber 0.3.19",
