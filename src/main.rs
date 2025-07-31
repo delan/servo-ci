@@ -1,3 +1,7 @@
+mod actions;
+mod http;
+mod runner;
+
 use clap::Parser as _;
 use cmd_lib::run_cmd;
 use jane_eyre::eyre;
@@ -6,6 +10,8 @@ use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _
 #[derive(clap::Parser, Debug)]
 pub enum Command {
     Hello,
+    #[command(subcommand)]
+    Runner(crate::runner::RunnerCommand),
 }
 
 fn main() -> eyre::Result<()> {
@@ -19,12 +25,16 @@ fn main() -> eyre::Result<()> {
         })
         .init();
 
-    let command = Command::parse();
-    match command {
-        Command::Hello => hello()?,
-    }
+    Command::parse().run()
+}
 
-    Ok(())
+impl Command {
+    fn run(self) -> eyre::Result<()> {
+        match self {
+            Command::Hello => hello(),
+            Command::Runner(subcommand) => subcommand.run(),
+        }
+    }
 }
 
 #[tracing::instrument]
