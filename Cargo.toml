@@ -6,7 +6,7 @@ repository = "https://github.com/delan/servo-ci"
 
 [dependencies]
 clap = { version = "4.5.42", features = ["derive"] }
-cmd_lib = "1.9.6"
+cmd_lib = { version = "1.9.6", git = "https://github.com/delan/rust_cmd_lib.git", branch = "servo/ci", features = ["tracing"] }
 jane-eyre = "0.3.0"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
